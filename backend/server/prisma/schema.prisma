@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+
+
+// --- ENUMS (Para garantir a padronização dos dados) ---
+
+enum TipoAeronave {
+  Comercial
+  Militar
+}
+
+enum TipoPeca {
+  Nacional
+  Importada
+}
+
+enum StatusEtapa {
+  Pendente
+  Em_Andamento @map("Em Andamento") // O Prisma não aceita espaço no nome, então mapeamos
+  Concluida    @map("Concluída")
+}
+
+enum TipoTeste {
+  Eletrico     @map("Elétrico")
+  Hidraulico   @map("Hidráulico")
+  Aerodinamico @map("Aerodinâmico")
+}
+
+enum ResultadoTeste {
+  Aprovado
+  Reprovado
+}
+
+enum NivelFuncionario {
+  Admin      @map("1 - Admin")
+  Engenheiro @map("2 - Engenheiro")
+  Operador   @map("3 - Operador")
+}
+
+// --- MODELS (As Tabelas do Banco) ---
+
+model Aeronave {
+  id         Int      @id @default(autoincrement())
+  codigo     String   @unique
+  modelo     String
+  tipo       TipoAeronave
+  capacidade Int
+  alcance    Int
+
+  // Relacionamentos (Associações)
+  pecas   Peca[]
+  etapas  Etapa[]
+  testes  Teste[]
+}
+
+model Peca {
+  id         Int      @id @default(autoincrement())
+  nome       String
+  tipo       TipoPeca
+  fornecedor String
+
+  // Relacionamento inverso (Muitas Peças podem estar em muitas Aeronaves)
+  aeronaves Aeronave[]
+}
+
+model Etapa {
+  id     Int         @id @default(autoincrement())
+  nome   String
+  data   String      // Vamos manter como String por enquanto para facilitar a compatibilidade com seu front
+  status StatusEtapa @default(Pendente)
+
+  // Relacionamentos
+  aeronaves    Aeronave[]
+  funcionarios Funcionario[]
+}
+
+model Teste {
+  id        Int            @id @default(autoincrement())
+  tipo      TipoTeste
+  resultado ResultadoTeste
+
+  // Relacionamento
+  aeronaves Aeronave[]
+}
+
+model Funcionario {
+  id       String           @id // O ID do funcionário é inserido manualmente (ex: matrícula), não é autoincrement
+  nome     String
+  telefone String
+  endereco String
+  usuario  String           @unique
+  senha    String
+  nivel    NivelFuncionario
+
+  // Relacionamento
+  etapas Etapa[]
+}
